@@ -1,0 +1,4 @@
+{"at": "2026-11-23T11:37:44+00:00", "action": "promote", "champion": "1", "previous": null, "reason": "first model, trained on the reference period", "changed": true}
+{"at": "2026-11-23T11:37:58+00:00", "action": "promote", "champion": "3", "previous": "1", "reason": "retrained after retrain: holdout MAE 0.99 < champion 1.76", "changed": true}
+{"at": "2026-11-23T11:38:04+00:00", "action": "promote", "champion": "4", "previous": "3", "reason": "retrained after forced (monitoring said 'hold'): holdout MAE 0.50 < champion 0.52", "changed": true}
+{"at": "2026-11-23T11:38:05+00:00", "action": "rollback", "champion": "3", "previous": "4", "reason": "v4 was trained on a feed that failed the data quality check (2020-03-23..2020-03-29); back to v3", "changed": true}

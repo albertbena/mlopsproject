@@ -1,0 +1,37 @@
+{
+  "step": 3,
+  "name": "drift_detected",
+  "what": "Monitor the week demand starts to fall",
+  "result": {
+    "model_version": "1",
+    "run_id": "8c14b2b0f12445f58c65b224575f260d",
+    "status": "drift",
+    "action": "retrain",
+    "reasons": [
+      "WAPE 22.6% is 1.70x the reference WAPE 13.2%"
+    ],
+    "window": {
+      "start": "2020-03-09 00:00:00",
+      "end": "2020-03-15 23:00:00",
+      "hours": 168,
+      "rows": 44184
+    },
+    "mean_pickups": 22.425,
+    "reference_mean_pickups": 33.481,
+    "psi": {
+      "pickups": 0.0114,
+      "lag_1": 0.0113
+    },
+    "mae": 5.0583,
+    "reference_mae": 4.431,
+    "wape": 0.2256,
+    "reference_wape": 0.1323,
+    "wape_ratio": 1.704,
+    "silent_zones": [],
+    "thresholds": {
+      "psi_threshold": 0.2,
+      "wape_ratio_threshold": 1.5,
+      "min_zone_mean": 5
+    }
+  }
+}

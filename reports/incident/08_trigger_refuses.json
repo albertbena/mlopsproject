@@ -1,0 +1,10 @@
+{
+  "step": 8,
+  "name": "trigger_refuses",
+  "what": "Retraining trigger on that report",
+  "result": {
+    "decision": "no_retrain",
+    "because": "monitoring action is 'hold'",
+    "champion": "3"
+  }
+}

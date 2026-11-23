@@ -1,0 +1,18 @@
+{
+  "step": 1,
+  "name": "reference",
+  "what": "Train v1 on the reference period and serve it",
+  "result": {
+    "action": "promote",
+    "version": "1",
+    "valid_mae": 4.431,
+    "valid_rmse": 14.4511,
+    "valid_wape": 0.1323,
+    "baseline_lag168_mae": 6.8402,
+    "baseline_lag168_rmse": 24.5059,
+    "baseline_lag168_wape": 0.2043,
+    "baseline_lag24_mae": 8.7777,
+    "baseline_lag24_rmse": 34.0214,
+    "baseline_lag24_wape": 0.2622
+  }
+}

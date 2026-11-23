@@ -1,0 +1,13 @@
+{
+  "step": 12,
+  "name": "rollback",
+  "what": "Roll back to the last model trained on clean data",
+  "result": {
+    "action": "rollback",
+    "champion": "3",
+    "previous": "4",
+    "reason": "v4 was trained on a feed that failed the data quality check (2020-03-23..2020-03-29); back to v3",
+    "changed": true,
+    "seconds": 0.037
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "step": 4,
+  "name": "retrain",
+  "what": "Retraining trigger on that report",
+  "result": {
+    "decision": "keep_champion",
+    "trigger": "retrain",
+    "reasons": [
+      "WAPE 22.6% is 1.70x the reference WAPE 13.2%"
+    ],
+    "train": [
+      "2020-03-02",
+      "2020-03-12"
+    ],
+    "holdout": [
+      "2020-03-13",
+      "2020-03-15"
+    ],
+    "champion": {
+      "version": "1",
+      "holdout_mae": 5.3099
+    },
+    "challenger": {
+      "version": "2",
+      "run_id": "0f2130d02863491b9732d7541245dd95",
+      "holdout_mae": 6.5491
+    },
+    "serving": "1"
+  }
+}

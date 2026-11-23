@@ -1,0 +1,30 @@
+{
+  "step": 9,
+  "name": "forced_retrain",
+  "what": "Human override: retrain on the broken week anyway",
+  "result": {
+    "decision": "promote",
+    "trigger": "forced (monitoring said 'hold')",
+    "reasons": [
+      "3 busy zone(s) with no pickup at all: [140, 236, 238]"
+    ],
+    "train": [
+      "2020-03-16",
+      "2020-03-26"
+    ],
+    "holdout": [
+      "2020-03-27",
+      "2020-03-29"
+    ],
+    "champion": {
+      "version": "3",
+      "holdout_mae": 0.5194
+    },
+    "challenger": {
+      "version": "4",
+      "run_id": "0af9a023879b46abb1d4f0f005a38e90",
+      "holdout_mae": 0.4954
+    },
+    "serving": "4"
+  }
+}
