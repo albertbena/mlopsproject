@@ -4,7 +4,7 @@ PORT    ?= 8000
 START   ?= 2020-03-16
 
 .PHONY: help setup pipeline serve test monitor retrain status rollback incident mlflow-ui clean \
-        demo demo-ui demo-prep demo-check demo-reset
+        present demo demo-ui demo-prep demo-check demo-reset
 
 help:  ## this list
 	@grep -E '^[a-z-]+:.*## ' Makefile | awk -F':.*## ' '{printf "  make %-11s %s\n", $$1, $$2}'
@@ -54,7 +54,10 @@ demo-check:  ## before going on stage: API up, v1 serving, the March example rea
 demo:  ## live demo of the whole loop (Enter: run, s: skip, q: quit); API=1 for the API alone
 	$(PY) scripts/demo.py run --port $(PORT) $(if $(SHORT),--short) $(if $(API),--api)
 
-demo-ui:  ## the same live demo as a web page with buttons (opens the browser on http://localhost:8501)
+present:  ## the defence: slides with the live demo inside (opens http://localhost:8501; P: speaker notes)
+	$(PY) scripts/demo.py present --port $(PORT)
+
+demo-ui:  ## the live demo alone, as a web page (opens http://localhost:8501/demo)
 	$(PY) scripts/demo.py ui --port $(PORT)
 
 demo-reset:  ## after a rehearsal: v1 champion again and the API reloaded

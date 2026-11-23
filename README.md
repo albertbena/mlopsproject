@@ -37,7 +37,8 @@ make monitor START=2020-03-16   # drift report for one week
 make incident                   # replay the full incident (drift, retrain, broken feed, rollback)
 make mlflow-ui                  # runs, metrics, tags and the registry on http://localhost:5000
 make demo                       # live demo of the whole loop: predict, drift, retrain, swap, roll back (docs/demo.md)
-make demo-ui                    # the same demo as a web page with buttons, on http://localhost:8501
+make demo-ui                    # the same demo as a web page with buttons, on http://localhost:8501/demo
+make present                    # the defence: the slides with the live demo inside (presentation/)
 make help                       # every command
 ```
 

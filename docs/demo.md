@@ -15,10 +15,33 @@ One terminal, the real data, every part of the project in the order it happens i
 Everything runs locally: no network is needed once the pipeline has run. The demo ends with v1 serving again.
 `make demo API=1` (or `run --api`) is the older, shorter demo of the API alone.
 
-## Two ways to run it
+## The defence: the slides, with the demo inside
 
-- **The web page (recommended on a projector)**: `make demo-ui` (Windows: `python scripts\demo.py ui`) opens
-  <http://localhost:8501> in the browser. One button per step (or `→`, `Space`, a presentation clicker), and each
+`presentation/NYC_Taxi_Demand_Defence.html` is the deck with a ninth board, **Live demo** (7:00 – 9:30), that runs
+the steps above. `presentation/Group6_MLOps_pitch.pdf` is the script that goes with it (new timings, the demo page,
+the likely questions, what to do if a step fails).
+
+```bash
+make serve          # terminal 1 (Windows: uvicorn taxi.api.app:app --port 8000)
+make present        # terminal 2 (Windows: python scripts\demo.py present): opens http://localhost:8501
+```
+
+| Key | Anywhere | On the live demo board |
+|---|---|---|
+| `→` `Space` `PageDown` (clicker) | next slide | runs the next demo step; after the last one, next slide |
+| `←` | previous slide | previous slide |
+| `P` (or the Notes button) | speaker view in a new window: the script of the current slide, the clock, on time or late | the line to say for each step, buttons to run, skip, reset |
+| `R` | | a step failed: show its result from the last rehearsal, marked "not live" |
+| `S` / `N` | | skip a step / leave the demo |
+| `T` | restart the clock | |
+
+Every step that succeeds is saved in `reports/demo/recorded.json`: that is what `R` shows. Opened as a plain file
+(double click), the deck works but the demo board says how to start the server, and `→` goes on.
+
+## Two other ways to run it
+
+- **The web page**: `make demo-ui` (Windows: `python scripts\demo.py ui`) opens
+  <http://localhost:8501/demo> in the browser. One button per step (or `→`, `Space`, a presentation clicker), and each
   result is drawn instead of printed: the model card, the hash in `dvc.lock`, a taxi meter for each prediction, the
   monitor's verdict and the demand drop, the challenger against the champion, the version swap, the rollback. The top
   bar shows, live, which version the registry calls champion and which one the API serves. The command of each step

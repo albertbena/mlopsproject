@@ -10,6 +10,8 @@
     make demo-check   | python scripts/demo.py check   API up, v1 serving, the March example ready
     make demo         | python scripts/demo.py run     Enter: run the step, s: skip it, q: quit
     make demo-reset   | python scripts/demo.py reset   if a rehearsal stopped half-way: v1 champion again
+    make present      | python scripts/demo.py present the slides with the live demo inside (http://localhost:8501)
+    make demo-ui      | python scripts/demo.py ui      the demo alone, as a web page (http://localhost:8501/demo)
 
 `run --api` is the shorter demo of the API alone. Every command on screen is the command that runs (the admin
 token is read from .env and never printed); the output of the monitor and of the trigger is cut to the lines that
@@ -532,13 +534,17 @@ def prep(port: int) -> None:
 # --------------------------------------------------------------------------------------------- the web page
 
 UI_PAGE = Path(__file__).with_name("demo_ui.html")
+DECK = ROOT / "presentation" / "NYC_Taxi_Demand_Defence.html"     # the slides, with the live demo as a board
+RECORDED = ROOT / "reports" / "demo" / "recorded.json"            # last good result of each step (rehearsal)
 
 
-def serve_ui(port: int, ui_port: int, open_browser: bool) -> None:
-    """A local web page that runs the same steps with buttons, for the projector (http://localhost:<ui_port>).
+def serve_ui(port: int, ui_port: int, open_browser: bool, page: str = "/demo") -> None:
+    """Serve the presentation (/) and the demo page (/demo), which run the steps above with buttons.
 
-    The page only asks for "step i": the commands are the ones above, run here, one at a time. It listens on
-    127.0.0.1 only, and never receives the admin token (only the command as displayed, and its output).
+    The pages only ask for "step i": the commands are the ones above, run here, one at a time. The server listens
+    on 127.0.0.1 only, and never sends the admin token (only the command as displayed, and its output). Every
+    step that succeeds is kept in reports/demo/recorded.json, so a page can show the rehearsal's result if a step
+    fails on stage.
     """
     import contextlib
     import io
@@ -592,7 +598,14 @@ def serve_ui(port: int, ui_port: int, open_browser: bool) -> None:
         def do_GET(self) -> None:
             path_, mode, _ = self._route()
             if path_ in ("/", "/index.html"):
+                return self._send(200, (DECK if DECK.exists() else UI_PAGE).read_bytes(), "text/html")
+            if path_ == "/demo":
                 return self._send(200, UI_PAGE.read_bytes(), "text/html")
+            if path_ == "/api/recorded":
+                try:
+                    return self._send(200, json.loads(RECORDED.read_text()))
+                except (OSError, ValueError):
+                    return self._send(200, {})
             if path_ == "/api/steps":
                 steps = build(mode)
                 return self._send(200, {"mode": mode, "port": port, "example": march_example(), "steps": [
@@ -614,6 +627,8 @@ def serve_ui(port: int, ui_port: int, open_browser: bool) -> None:
                     return self._send(400, {"error": "no such step"})
                 with lock:  # one command at a time, as in a terminal
                     res = execute(steps[i], port)
+                    if res["ok"]:
+                        record(steps[i], res)
                 return self._send(200, {"i": i, **res, "status": status()})
             if path_ == "/api/reset":
                 buf = io.StringIO()
@@ -622,8 +637,17 @@ def serve_ui(port: int, ui_port: int, open_browser: bool) -> None:
                 return self._send(200, {"text": buf.getvalue(), "status": status()})
             self._send(404, {"error": "not found"})
 
+    def record(step: Step, res: dict) -> None:
+        try:
+            data = json.loads(RECORDED.read_text())
+        except (OSError, ValueError):
+            data = {}
+        data[step.caption] = {**res, "recorded_at": time.strftime("%d %b %H:%M")}
+        RECORDED.parent.mkdir(parents=True, exist_ok=True)
+        RECORDED.write_text(json.dumps(data, indent=1))
+
     server = ThreadingHTTPServer(("127.0.0.1", ui_port), Handler)
-    url = f"http://localhost:{ui_port}"
+    url = f"http://localhost:{ui_port}{page if page != '/' else ''}"
     print(c(BOLD, f"Demo page: {url}") + c(DIM, "   (Ctrl+C to stop it; the API must run in another terminal)"))
     if open_browser:
         threading.Timer(0.5, webbrowser.open, args=(url,)).start()
@@ -646,7 +670,7 @@ def use_project_python() -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("action", choices=["ui", "run", "check", "prep", "reset", "env"])
+    ap.add_argument("action", choices=["present", "ui", "run", "check", "prep", "reset", "env"])
     ap.add_argument("--port", type=int, default=int(os.environ.get("PORT") or env_file().get("PORT") or 8000))
     ap.add_argument("--short", action="store_true", help="skip the optional steps")
     ap.add_argument("--api", action="store_true", help="the shorter demo of the API alone")
@@ -655,8 +679,8 @@ def main() -> None:
     a = ap.parse_args()
     if a.action != "env":
         use_project_python()
-    if a.action == "ui":
-        serve_ui(a.port, a.ui_port, not a.no_browser)
+    if a.action in ("present", "ui"):
+        serve_ui(a.port, a.ui_port, not a.no_browser, "/" if a.action == "present" else "/demo")
     elif a.action == "run":
         run(a.port, a.short, a.api)
     elif a.action == "check":
