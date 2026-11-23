@@ -1,0 +1,21 @@
+# Unit and integration tests on every push and pull request. No data is downloaded:
+# the tests use a small synthetic dataset and a temporary MLflow registry.
+name: tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt && pip install -e .
+      - run: python -m pytest
