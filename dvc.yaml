@@ -1,0 +1,42 @@
+# The data and training pipeline. `dvc repro` runs only the stages whose inputs changed;
+# dvc.lock records the hash of every input and output, so a run can be traced to its exact data.
+stages:
+  download:
+    cmd: python -m taxi.data.download
+    deps:
+      - src/taxi/data/download.py
+    params:
+      - data.base_url
+      - data.months
+    outs:
+      - data/raw
+
+  aggregate:
+    cmd: python -m taxi.data.aggregate
+    deps:
+      - data/raw
+      - src/taxi/data/aggregate.py
+    params:
+      - data.months
+      - data.max_zone_id
+    outs:
+      - data/processed/zone_hour.parquet
+    metrics:
+      - reports/data_summary.json:
+          cache: false
+
+  train:
+    cmd: python -m taxi.train
+    deps:
+      - data/processed/zone_hour.parquet
+      - src/taxi/features.py
+      - src/taxi/monitor.py
+      - src/taxi/train.py
+    params:
+      - periods.train
+      - periods.valid
+      - features
+      - model
+    metrics:
+      - reports/train_metrics.json:
+          cache: false
