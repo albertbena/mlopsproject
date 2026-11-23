@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live demo · NYC taxi demand</title>
+<!-- Optional: the deck's mono font when online; Consolas / Menlo otherwise. Everything else is local. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+:root {
+  color-scheme: light;
+  --walnut: #1c0e0a; --walnut-700: #2c1a14; --walnut-600: #3d2922; --walnut-300: #ad9285;
+  --oxblood: #7a0000; --oxblood-soft: #f6e3e1;
+  --page: #faf8f4; --card: #ffffff; --sunken: #f6f1e8; --hair: #ddd8cd; --line: #c8c2b6;
+  --muted: #7d776c; --n-600: #5a554d; --body: #221f1c; --inverse: #f6f1e8;
+  --taxi: #f2b705; --taxi-soft: #fff6d6; --taxi-ink: #6b4f00;
+  --ok: #2f8a5f; --ok-soft: #e3f4ea; --ochre: #b8802a; --ochre-soft: #fbefdc;
+  --ease: cubic-bezier(.2, 0, 0, 1);
+  --font: "Ranade", "Gill Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", Consolas, ui-monospace, Menlo, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--page); color: var(--body); font: 18px/1.45 var(--font);
+  display: grid; grid-template-rows: auto auto 1fr auto; height: 100vh; overflow: hidden;
+}
+button { font: inherit; cursor: pointer; }
+.mono { font-family: var(--mono); }
+
+/* ---------------------------------------------------------------- top bar */
+.bar {
+  background: var(--walnut); color: var(--inverse); display: flex; align-items: center;
+  justify-content: space-between; gap: 24px; padding: 14px 28px;
+}
+.brand { display: flex; align-items: center; gap: 14px; font-weight: 600; letter-spacing: .14em;
+  text-transform: uppercase; font-size: 15px; color: rgba(246,241,232,.7); }
+.brand b { color: var(--inverse); letter-spacing: .02em; text-transform: none; font-size: 21px; font-weight: 600; }
+.brand .light { width: 12px; height: 12px; border-radius: 99px; background: var(--taxi);
+  box-shadow: 0 0 0 4px rgba(242,183,5,.18); }
+.chips { display: flex; gap: 10px; align-items: center; }
+.chip { display: flex; align-items: center; gap: 10px; padding: 7px 14px; border-radius: 999px;
+  background: var(--walnut-600); font-size: 15px; color: rgba(246,241,232,.75); white-space: nowrap; }
+.chip b { font: 700 19px var(--mono); color: var(--taxi); }
+.chip i { width: 10px; height: 10px; border-radius: 99px; background: var(--walnut-300); }
+.chip.up i { background: #5ad18f; box-shadow: 0 0 0 3px rgba(90,209,143,.25); }
+.chip.down i { background: #ff5a4f; box-shadow: 0 0 0 3px rgba(255,90,79,.25); }
+.chip.flash { animation: flash 1.2s var(--ease); }
+@keyframes flash { 0% { background: var(--taxi); color: var(--walnut); } 100% { background: var(--walnut-600); } }
+
+/* ---------------------------------------------------------------- the loop */
+.loop { display: flex; align-items: stretch; gap: 0; padding: 14px 28px; background: var(--sunken);
+  border-bottom: 1px solid var(--hair); overflow-x: auto; }
+.stagepill { flex: 1 1 0; min-width: 120px; padding: 8px 14px; border-radius: 10px; position: relative;
+  color: var(--muted); transition: background .3s var(--ease), color .3s var(--ease); }
+.stagepill .t { font-weight: 700; font-size: 17px; color: var(--n-600); display: flex; align-items: center; gap: 8px; }
+.stagepill .s { font-size: 13px; }
+.stagepill .who { font-size: 13px; font-weight: 600; color: var(--walnut-300); }
+.stagepill + .stagepill::before { content: "→"; position: absolute; left: -9px; top: 14px; color: var(--line); }
+.stagepill.done .t { color: var(--ok); }
+.stagepill.done .t::after { content: "✓"; font-size: 15px; }
+.stagepill.active { background: var(--taxi); color: var(--taxi-ink); }
+.stagepill.active .t, .stagepill.active .who { color: var(--walnut); }
+
+/* ---------------------------------------------------------------- main */
+main { display: grid; grid-template-columns: 290px 1fr; min-height: 0; }
+.rail { border-right: 1px solid var(--hair); overflow-y: auto; padding: 14px 10px; background: var(--page); }
+.ritem { display: grid; grid-template-columns: 30px 1fr 22px; align-items: center; gap: 8px; width: 100%;
+  text-align: left; padding: 9px 10px; border: 0; border-radius: 8px; background: transparent; color: var(--n-600);
+  font-size: 16px; }
+.ritem:hover { background: var(--sunken); }
+.ritem .n { font: 600 14px var(--mono); color: var(--muted); }
+.ritem .st { font-size: 15px; text-align: center; }
+.ritem.sel { background: var(--walnut); color: var(--inverse); }
+.ritem.sel .n { color: var(--taxi); }
+.ritem.upnext:not(.sel) { box-shadow: inset 3px 0 0 var(--taxi); color: var(--body); font-weight: 600; }
+.ritem.opt .lbl::after { content: " · optional"; color: var(--muted); font-size: 13px; font-weight: 400; }
+.ritem.ok .st { color: var(--ok); } .ritem.bad .st { color: var(--oxblood); } .ritem.skip { opacity: .5; }
+
+.stage { overflow-y: auto; padding: 26px 40px 30px; }
+.meta { display: flex; gap: 12px; align-items: center; font-size: 14px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.meta .tag { background: var(--taxi-soft); color: var(--taxi-ink); padding: 3px 10px; border-radius: 6px; }
+.meta .who { color: var(--walnut-300); }
+h1 { font-size: clamp(26px, 2.4vw, 40px); line-height: 1.15; margin: 8px 0 16px; font-weight: 600;
+  color: var(--walnut); letter-spacing: -.01em; }
+h1::first-letter { text-transform: uppercase; }
+.cmd { background: var(--walnut); color: var(--inverse); border-radius: 12px; padding: 14px 18px;
+  display: flex; gap: 12px; align-items: flex-start; font: 16px/1.5 var(--mono); }
+.cmd .ps { color: var(--taxi); font-weight: 700; }
+.cmd pre { margin: 0; white-space: pre-wrap; word-break: break-all; font: inherit; }
+.cmd .time { margin-left: auto; color: rgba(246,241,232,.55); white-space: nowrap; font-size: 14px; }
+.result { margin-top: 22px; animation: rise .45s var(--ease); }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+details.raw { margin-top: 22px; color: var(--muted); font-size: 15px; }
+details.raw summary { cursor: pointer; }
+details.raw pre { background: var(--sunken); border: 1px solid var(--hair); border-radius: 10px; padding: 14px;
+  font: 14px/1.5 var(--mono); color: var(--body); white-space: pre-wrap; word-break: break-all; max-height: 320px; overflow: auto; }
+
+/* ---------------------------------------------------------------- result pieces */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.card { background: var(--card); border: 1px solid var(--hair); border-radius: 14px; padding: 20px 24px; }
+.label { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: 12px 22px; align-items: baseline; align-content: start; }
+.kv .k { color: var(--muted); font-size: 16px; }
+.kv .v { font: 500 19px var(--mono); word-break: break-all; }
+.hl { background: var(--taxi-soft); color: var(--taxi-ink); padding: 1px 6px; border-radius: 5px; font-weight: 700; }
+.vbig { font: 700 64px/1 var(--mono); color: var(--walnut); }
+.badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 8px;
+  font: 700 18px var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+.badge.red { background: var(--oxblood); color: #fff; } .badge.yellow { background: var(--taxi); color: var(--walnut); }
+.badge.green { background: var(--ok); color: #fff; } .badge.grey { background: var(--sunken); color: var(--n-600); }
+.verdict { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
+.note { color: var(--n-600); font-size: 17px; }
+.good { color: var(--ok); font-weight: 600; } .bad { color: var(--oxblood); font-weight: 600; }
+
+.meter { background: var(--walnut); color: var(--inverse); border-radius: 16px; padding: 22px 28px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px 28px; }
+.meter .row { grid-column: 1 / -1; display: flex; justify-content: space-between; font-size: 15px;
+  letter-spacing: .12em; text-transform: uppercase; color: rgba(246,241,232,.6); }
+.meter .row b { color: var(--taxi); font-family: var(--mono); letter-spacing: .04em; }
+.meter .cap { font-size: 14px; letter-spacing: .14em; text-transform: uppercase; color: rgba(246,241,232,.55); margin-top: 8px; }
+.meter .fare { font: 500 clamp(54px, 6vw, 88px)/1 var(--mono); color: var(--taxi); letter-spacing: -.02em; }
+.meter .real { font: 500 clamp(54px, 6vw, 88px)/1 var(--mono); color: var(--inverse); letter-spacing: -.02em; }
+.offby { grid-column: 1 / -1; margin-top: 10px; font: 600 17px var(--mono); }
+.offby.g { color: #7fe0a8; } .offby.o { color: #ffd166; } .offby.r { color: #ff8a80; }
+
+.bars { display: grid; gap: 12px; }
+.barrow { display: grid; grid-template-columns: 170px 1fr 160px; gap: 14px; align-items: center; }
+.barrow .name { font-weight: 600; color: var(--n-600); }
+.track { background: var(--sunken); border-radius: 8px; height: 34px; overflow: hidden; }
+.fill { height: 100%; border-radius: 8px; background: var(--walnut-300); width: 0; transition: width .9s var(--ease); }
+.fill.actual { background: var(--walnut); } .fill.old { background: var(--oxblood); } .fill.new { background: var(--ok); }
+.fill.taxi { background: var(--taxi); }
+.barrow .val { font: 600 19px var(--mono); text-align: right; }
+.bignum { font: 700 54px/1 var(--mono); }
+.reasons { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.reasons li { font: 500 17px var(--mono); padding: 10px 14px; background: var(--oxblood-soft); color: var(--oxblood); border-radius: 8px; }
+.swap { display: flex; align-items: center; gap: 22px; }
+.swap .arrow { font-size: 44px; color: var(--muted); }
+.vchip { font: 700 56px/1 var(--mono); padding: 14px 24px; border-radius: 14px; background: var(--sunken); color: var(--n-600); }
+.vchip.now { background: var(--taxi); color: var(--walnut); }
+.lockline { font: 16px/1.7 var(--mono); white-space: pre-wrap; word-break: break-all; }
+.lockline .ln { color: var(--muted); margin-right: 14px; }
+.err { border: 2px solid var(--oxblood); background: var(--oxblood-soft); border-radius: 14px; padding: 20px 24px; }
+.err .code { font: 700 46px/1 var(--mono); color: var(--oxblood); }
+.err .msg { font: 500 20px var(--mono); margin-top: 10px; }
+.spin { display: inline-block; width: 22px; height: 22px; border: 3px solid rgba(28,14,10,.25);
+  border-top-color: var(--walnut); border-radius: 99px; animation: spin .8s linear infinite; vertical-align: -4px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.running { display: flex; gap: 14px; align-items: center; font-size: 20px; color: var(--n-600); }
+
+/* ---------------------------------------------------------------- ready check */
+.check { display: grid; gap: 8px; margin-top: 12px; }
+.check div { display: grid; grid-template-columns: 34px 1fr; gap: 6px; font-size: 17px; }
+.check .fix { grid-column: 2; color: var(--muted); font: 14px var(--mono); }
+.hero { color: var(--n-600); font-size: 20px; max-width: 60ch; }
+kbd { font: 600 15px var(--mono); background: var(--card); border: 1px solid var(--line); border-bottom-width: 3px;
+  border-radius: 6px; padding: 1px 8px; }
+
+/* ---------------------------------------------------------------- next bar */
+.next { display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: center; padding: 14px 28px;
+  background: var(--card); border-top: 1px solid var(--hair); }
+.next .what { min-width: 0; }
+.next .what .label { margin-bottom: 4px; }
+.next .what .cap { font-size: 20px; font-weight: 600; color: var(--walnut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.next .what .c { font: 14px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.actions { display: flex; gap: 10px; align-items: center; }
+.go { background: var(--taxi); color: var(--walnut); border: 0; border-radius: 12px; padding: 16px 30px;
+  font-size: 21px; font-weight: 700; display: flex; gap: 12px; align-items: center; min-width: 190px; justify-content: center;
+  box-shadow: 0 3px 0 var(--taxi-ink); transition: transform .1s var(--ease); }
+.go:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--taxi-ink); }
+.go:disabled { opacity: .55; cursor: default; }
+.ghost { background: transparent; border: 1px solid var(--line); color: var(--n-600); border-radius: 10px; padding: 12px 16px; font-size: 16px; }
+.ghost:hover { background: var(--sunken); }
+
+@media (max-width: 900px) {
+  main { grid-template-columns: 1fr; } .rail { display: none; } .stage { padding: 20px 16px; }
+  .grid2, .meter { grid-template-columns: 1fr; } .chips .chip.reg { display: none; }
+  .barrow { grid-template-columns: 110px 1fr 80px; } .loop { padding: 10px 16px; } .bar, .next { padding: 12px 16px; }
+}
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="brand"><span class="light"></span>NYC taxi demand <b id="title">the MLOps loop, live</b></div>
+  <div class="chips">
+    <div class="chip" id="apiChip"><i></i>API</div>
+    <div class="chip reg" id="champChip">Registry champion <b id="champ">–</b></div>
+    <div class="chip" id="servChip">API serving <b id="serving">–</b></div>
+  </div>
+</header>
+<nav class="loop" id="loop"></nav>
+<main>
+  <aside class="rail" id="rail"></aside>
+  <section class="stage" id="stage"></section>
+</main>
+<footer class="next" id="next"></footer>
+
+<script>
+const MODE = new URLSearchParams(location.search).get("mode") || "full";
+const STAGES = {
+  trace:    ["Trace", "DVC · MLflow"],
+  serve:    ["Serve", "FastAPI"],
+  drift:    ["COVID", "March 2020"],
+  monitor:  ["Monitor", "PSI · WAPE"],
+  retrain:  ["Retrain", "challenger vs champion"],
+  swap:     ["Swap", "no restart"],
+  rollback: ["Roll back", "one command"],
+};
+const LABEL = { model: "Model card", hash: "dvc.lock", error: "Bad request", monitor: "Monitor the week",
+  retrain: "Retrain trigger", reload: "Reload the API", rollback: "Roll back", health: "Health", promote: "Promote" };
+
+let steps = [], results = {}, done = new Set(), sel = -1, running = false, status = null, dataHash = null;
+const preds = {};          // hour -> {actual, list: [{version, value}]}
+
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+function when(iso) {
+  const m = String(iso).match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+  if (!m) return iso;
+  const d = new Date(+m[1], +m[2] - 1, +m[3]);
+  return `${DAYS[d.getDay()]} ${+m[3]} ${MONTHS[+m[2] - 1]} ${m[1]} · ${m[4]}:${m[5]}`;
+}
+const shortDay = (iso) => { const m = String(iso).match(/(\d{4})-(\d{2})-(\d{2})/); return m ? `${+m[3]} ${MONTHS[+m[2] - 1]}` : iso; };
+const pct = (p, a) => (a ? Math.round(((p - a) / a) * 100) : null);
+const sign = (n) => (n > 0 ? "+" : n < 0 ? "−" : "±") + Math.abs(n);
+const hourOf = (display) => (display.match(/"hour": "([^"]+)"/) || [])[1];
+
+async function call(path, opts) {
+  const r = await fetch(path, opts);
+  if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
+  return r.json();
+}
+
+/* ------------------------------------------------------------------ status chips */
+function setStatus(s) {
+  if (!s) return;
+  const before = status;
+  status = s;
+  const api = $("#apiChip");
+  api.className = "chip " + (s.api.ok ? "up" : "down");
+  api.lastChild.textContent = s.api.ok ? "API up" : "API down";
+  $("#champ").textContent = s.champion ? "v" + s.champion : "–";
+  $("#serving").textContent = s.api.version ? "v" + s.api.version : "–";
+  if (before && before.champion !== s.champion) flash("#champChip");
+  if (before && before.api.version !== s.api.version) flash("#servChip");
+}
+function flash(id) { const el = $(id); el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); }
+async function refreshStatus() { try { setStatus(await call("/api/status")); } catch (e) { /* page server stopped */ } }
+
+/* ------------------------------------------------------------------ loop strip, rail, next bar */
+const nextIndex = () => { for (let i = 0; i < steps.length; i++) if (!done.has(i)) return i; return -1; };
+
+function renderLoop() {
+  const order = [...new Set(steps.map((s) => s.stage))];
+  const nx = nextIndex();
+  const activeStage = sel >= 0 ? steps[sel].stage : nx >= 0 ? steps[nx].stage : null;
+  $("#loop").innerHTML = order.map((st) => {
+    const idx = steps.map((s, i) => (s.stage === st ? i : -1)).filter((i) => i >= 0);
+    const who = [...new Set(idx.map((i) => steps[i].who).filter(Boolean))].join(" · ");
+    const isDone = idx.every((i) => done.has(i));
+    const [t, s] = STAGES[st] || [st, ""];
+    return `<div class="stagepill ${st === activeStage ? "active" : isDone ? "done" : ""}">
+      <div class="t">${esc(t)}</div><div class="s">${esc(s)}</div><div class="who">${esc(who)}</div></div>`;
+  }).join("");
+}
+
+// a step that shows an expected refusal (422, 401) went fine when it got that refusal
+const good = (s, r) => r.ok || (s.kind === "error" && /^4/.test(r.http || ""));
+
+function railLabel(s) {
+  if (s.kind === "predict") return `Predict · ${shortDay(hourOf(s.display))}`;
+  return LABEL[s.kind] || s.caption;
+}
+function renderRail() {
+  const nx = nextIndex();
+  $("#rail").innerHTML = steps.map((s, i) => {
+    const r = results[i];
+    const st = r ? (r.skipped ? "–" : good(s, r) ? "✓" : "✗") : i === nx ? "▸" : "";
+    const cls = ["ritem", i === sel ? "sel" : "", i === nx ? "upnext" : "", s.optional ? "opt" : "",
+      r ? (r.skipped ? "skip" : good(s, r) ? "ok" : "bad") : ""].join(" ");
+    return `<button class="${cls}" data-i="${i}"><span class="n">${String(i + 1).padStart(2, "0")}</span>
+      <span class="lbl">${esc(railLabel(s))}</span><span class="st">${st}</span></button>`;
+  }).join("");
+  document.querySelectorAll(".ritem").forEach((b) => (b.onclick = () => select(+b.dataset.i)));
+}
+
+function renderNext() {
+  const nx = nextIndex();
+  const el = $("#next");
+  if (nx < 0) {
+    el.innerHTML = `<div class="what"><div class="label">Done</div><div class="cap">The whole loop ran live: trace, serve, monitor, retrain, swap, roll back.</div></div>
+      <div class="actions"><button class="ghost" id="resetBtn">Reset the demo</button></div>`;
+  } else {
+    const s = steps[nx];
+    el.innerHTML = `<div class="what"><div class="label">Next · step ${nx + 1} of ${steps.length}${s.optional ? " · optional" : ""}</div>
+      <div class="cap">${esc(s.caption)}</div><div class="c">$ ${esc(s.display.replace(/\\\n\s*/g, ""))}</div></div>
+      <div class="actions">${s.optional ? `<button class="ghost" id="skipBtn">Skip</button>` : ""}
+      <button class="go" id="goBtn" ${running !== false ? "disabled" : ""}>${running !== false ? `<span class="spin"></span> Running` : "Run ▶"}</button></div>`;
+    const go = $("#goBtn"); if (go) go.onclick = () => runStep(nx);
+    const sk = $("#skipBtn"); if (sk) sk.onclick = () => skip(nx);
+  }
+  const rb = $("#resetBtn"); if (rb) rb.onclick = resetDemo;
+}
+
+/* ------------------------------------------------------------------ the stage panel */
+function select(i) { sel = i; renderStage(); renderRail(); renderLoop(); }
+
+function renderStage() {
+  if (sel < 0) return showReady();
+  const s = steps[sel], r = results[sel];
+  const time = r && r.seconds != null ? `<span class="time">${r.seconds.toFixed(1)} s</span>` : "";
+  let body;
+  if (running === sel) body = `<div class="running"><span class="spin"></span> Running${s.slow ? " (a few seconds, this one trains or scans a whole week)" : ""}…</div>`;
+  else if (!r) body = `<p class="note">Not run yet.</p><button class="go" id="runThis">Run this step ▶</button>`;
+  else if (r.skipped) body = `<p class="note">Skipped.</p><button class="ghost" id="runThis">Run it anyway</button>`;
+  else body = draw(s, r);
+  $("#stage").innerHTML = `
+    <div class="meta"><span>Step ${sel + 1} / ${steps.length}</span>
+      <span class="tag">${esc((STAGES[s.stage] || [s.stage])[0])}</span><span class="who">${esc(s.who)}</span></div>
+    <h1>${esc(s.caption)}</h1>
+    <div class="cmd"><span class="ps">$</span><pre>${esc(s.display)}</pre>${time}</div>
+    <div class="result">${body}</div>
+    ${r && !r.skipped ? `<details class="raw"><summary>Raw output</summary><pre>${esc(r.output || r.error || "(no output)")}</pre></details>` : ""}`;
+  const rt = $("#runThis"); if (rt) rt.onclick = () => runStep(sel);
+  setTimeout(() => document.querySelectorAll(".fill[data-w]").forEach((f) => (f.style.width = f.dataset.w)), 60);
+}
+
+function showReady() {
+  $("#stage").innerHTML = `<div class="meta"><span>Before we start</span></div>
+    <h1>Every part of the project, live, on the real data</h1>
+    <p class="hero">One click per step: the page runs the same commands as the terminal, on this laptop.
+      Press <kbd>→</kbd> or <kbd>Space</kbd> (or a presentation clicker) to run the next step.</p>
+    <div class="card" style="margin-top:20px"><div class="label">Ready check</div><div class="check" id="check"><div><span class="spin"></span><span>checking…</span></div></div></div>`;
+  call("/api/check").then((c) => {
+    $("#check").innerHTML = c.items.map((it) => `<div><span>${it.good ? '<span class="good">✓</span>' : it.blocking ? '<span class="bad">✗</span>' : "–"}</span>
+      <span>${esc(it.text)}</span>${!it.good && it.fix ? `<span class="fix">→ ${esc(it.fix)}</span>` : ""}</div>`).join("")
+      + `<div><span></span><span class="${c.ready ? "good" : "bad"}">${c.ready ? "Ready." : "Not ready yet: see ✗ above."}</span></div>`;
+  }).catch((e) => ($("#check").innerHTML = `<div><span class="bad">✗</span><span>${esc(e.message)}</span></div>`));
+}
+
+/* ------------------------------------------------------------------ drawing each kind of result */
+function draw(s, r) {
+  if (r.error && !r.docs.length) return errorCard(r.http || "!", r.error);
+  const d = r.docs[0] || {};
+  switch (s.kind) {
+    case "model": return drawModel(d);
+    case "hash": return drawHash(r.output);
+    case "predict": return r.ok ? drawPredict(d) : errorCard(r.http, detail(d));
+    case "error": return errorCard(r.http, detail(d), true);
+    case "monitor": return drawMonitor(d);
+    case "retrain": return drawRetrain(d);
+    case "reload": return r.ok ? drawReload(d) : errorCard(r.http, detail(d));
+    case "rollback": return drawRollback(r.docs);
+    case "promote": return drawPromote(d);
+    case "health": return drawHealth(d);
+    default: return `<pre class="lockline">${esc(r.output)}</pre>`;
+  }
+}
+const detail = (d) => (Array.isArray(d.detail) ? d.detail.map((x) => x.msg).join("; ") : d.detail || JSON.stringify(d));
+
+function errorCard(code, msg, expected) {
+  return `<div class="err"><div class="code">HTTP ${esc(code)}</div><div class="msg">${esc(msg)}</div></div>
+    ${expected ? `<p class="note" style="margin-top:14px"><span class="good">✓</span> A clear answer, not a crash: the API ${status && status.api.ok ? "is still up" : "keeps running"}.</p>` : ""}`;
+}
+
+function drawModel(d) {
+  if (d.data_md5) dataHash = d.data_md5;
+  const commit = String(d.git_commit || "");
+  return `<div class="grid2">
+    <div class="card"><div class="label">Serving now</div><div class="vbig" style="margin-top:10px">v${esc(d.version)}</div>
+      <p class="note">${esc(d.name)}</p></div>
+    <div class="card kv">
+      <span class="k">Git commit</span><span class="v"><b>${esc(commit.slice(0, 7))}</b><span style="color:var(--muted)">${esc(commit.slice(7))}</span></span>
+      <span class="k">Data hash</span><span class="v"><span class="hl">${esc(d.data_md5)}</span></span>
+      <span class="k">Trained on</span><span class="v">${esc((d.train_period || "").replace("..", " → "))}</span>
+      <span class="k">Validation MAE</span><span class="v">${esc(d.valid_mae)} pickups</span>
+      <span class="k">MLflow run</span><span class="v" style="font-size:15px;color:var(--muted)">${esc(d.run_id)}</span>
+    </div></div>
+    <p class="note" style="margin-top:16px">MLflow logged the exact code and the exact data with the model. Next: the same hash in DVC.</p>`;
+}
+
+function drawHash(out) {
+  const h = dataHash || (steps.find((s) => s.kind === "hash")?.display.match(/[0-9a-f]{32}/) || [])[0];
+  const lines = String(out).split(/\r?\n/).filter((l) => l.trim());
+  const found = h && lines.some((l) => l.includes(h));
+  const body = lines.map((l) => {
+    const m = l.match(/^(\d+):(.*)$/);
+    const txt = esc(m ? m[2] : l).replace(esc(h), `<span class="hl">${esc(h)}</span>`);
+    return `<div>${m ? `<span class="ln">${m[1]}</span>` : ""}${txt}</div>`;
+  }).join("");
+  return `<div class="card"><div class="label">dvc.lock · written by DVC, committed in Git</div>
+      <div class="lockline" style="margin-top:10px">${body || "<span class='bad'>(no line)</span>"}</div></div>
+    <p class="note" style="margin-top:16px">${found
+      ? `<span class="good">✓ Same hash as the model's data.</span> <code>make pipeline</code> (dvc repro) rebuilds exactly this file from the TLC.`
+      : `<span class="bad">✗ Hash not found in dvc.lock</span>: this data is not the one DVC built.`}</p>`;
+}
+
+function drawPredict(d) {
+  const hour = d.hour, a = d.actual_pickups, p = d.predicted_pickups, v = d.model_version;
+  if (hour) {
+    preds[hour] = preds[hour] || { actual: a, list: [] };
+    if (!preds[hour].list.some((x) => x.version === v)) preds[hour].list.push({ version: v, value: p });
+  }
+  const e = pct(p, a);
+  const cls = e == null ? "" : Math.abs(e) < 15 ? "g" : Math.abs(e) < 35 ? "o" : "r";
+  const meter = `<div class="meter">
+      <div class="row"><span>Zone ${esc(d.zone_id)} · ${esc(when(hour))}</span><span>Model <b>v${esc(v)}</b></span></div>
+      <div class="cap">Predicted</div><div class="cap">Actual</div>
+      <div class="fare">${esc(p)}</div><div class="real">${a == null ? "?" : esc(a)}</div>
+      ${e == null ? "" : `<div class="offby ${cls}">off by ${sign(e)}%</div>`}
+    </div>`;
+  const entry = preds[hour];
+  if (!entry || entry.list.length < 2) return meter;
+  const max = Math.max(entry.actual || 0, ...entry.list.map((x) => x.value)) || 1;
+  const first = entry.list[0].version;
+  const row = (name, val, cls, extra) => `<div class="barrow"><span class="name">${name}</span>
+      <div class="track"><div class="fill ${cls}" data-w="${Math.max(2, (val / max) * 100)}%"></div></div>
+      <span class="val">${esc(val)}${extra ? ` <span style="font-size:14px;color:var(--muted)">${extra}</span>` : ""}</span></div>`;
+  const bars = [row("What happened", entry.actual, "actual")].concat(entry.list.map((x) =>
+    row(`Model v${esc(x.version)}`, x.value, x.version === first ? "old" : "new", `${sign(pct(x.value, entry.actual))}%`))).join("");
+  return `<div class="grid2">${meter}<div class="card"><div class="label">Same hour, both models</div>
+    <div class="bars" style="margin-top:16px">${bars}</div></div></div>`;
+}
+
+function drawMonitor(d) {
+  const st = String(d.status || ""), ac = String(d.action || "");
+  const stc = st === "ok" ? "green" : st === "drift" ? "red" : "yellow";
+  const acc = ac === "retrain" ? "yellow" : ac === "hold" ? "red" : "grey";
+  const ref = d.reference_mean_pickups, now = d.mean_pickups, max = Math.max(ref || 0, now || 0) || 1;
+  const drop = pct(now, ref);
+  return `<div class="verdict"><span class="badge ${stc}">${esc(st)}</span><span style="font-size:28px;color:var(--muted)">→</span>
+      <span class="badge ${acc}">action: ${esc(ac)}</span></div>
+    <div class="grid2">
+      <div class="card"><div class="label">Why</div><ul class="reasons" style="margin-top:12px">
+        ${(d.reasons || []).map((x) => `<li>${esc(x)}</li>`).join("") || "<li>nothing to report</li>"}</ul></div>
+      <div class="card"><div class="label">Pickups per zone and hour</div>
+        <div class="bars" style="margin-top:16px">
+          <div class="barrow"><span class="name">Reference</span><div class="track"><div class="fill actual" data-w="${(ref / max) * 100}%"></div></div><span class="val">${esc(ref)}</span></div>
+          <div class="barrow"><span class="name">This week</span><div class="track"><div class="fill old" data-w="${Math.max(2, (now / max) * 100)}%"></div></div><span class="val">${esc(now)}</span></div>
+        </div>
+        ${drop == null ? "" : `<div class="bignum" style="margin-top:18px;color:var(--oxblood)">${sign(drop)}%</div><p class="note">demand against the reference period</p>`}
+      </div></div>`;
+}
+
+function drawRetrain(d) {
+  const ch = d.champion || {}, cl = d.challenger || {};
+  const promoted = d.decision === "promote";
+  const max = Math.max(ch.holdout_mae || 0, cl.holdout_mae || 0) || 1;
+  const gain = pct(cl.holdout_mae, ch.holdout_mae);
+  const span = (x) => (x ? `${shortDay(x[0])} → ${shortDay(x[1])}` : "?");
+  return `<div class="verdict"><span class="badge ${promoted ? "green" : "yellow"}">${esc(String(d.decision || "").replace("_", " "))}</span>
+      <span class="note">now serving in the registry: <b class="mono">v${esc(d.serving)}</b> · the API has not reloaded yet</span></div>
+    <div class="grid2">
+      <div class="card kv"><span class="k">Trained on</span><span class="v">${esc(span(d.train))}</span>
+        <span class="k">Tested on</span><span class="v">${esc(span(d.holdout))} <span style="color:var(--muted);font-size:15px">(kept aside)</span></span>
+        <span class="k">Challenger</span><span class="v">v${esc(cl.version)}</span></div>
+      <div class="card"><div class="label">Error on the same held-out days (MAE, lower is better)</div>
+        <div class="bars" style="margin-top:16px">
+          <div class="barrow"><span class="name">Champion v${esc(ch.version)}</span><div class="track"><div class="fill old" data-w="${(ch.holdout_mae / max) * 100}%"></div></div><span class="val">${esc(ch.holdout_mae)}</span></div>
+          <div class="barrow"><span class="name">Challenger v${esc(cl.version)}</span><div class="track"><div class="fill new" data-w="${(cl.holdout_mae / max) * 100}%"></div></div><span class="val">${esc(cl.holdout_mae)}</span></div>
+        </div>
+        ${gain == null ? "" : `<div class="bignum" style="margin-top:18px;color:${gain < 0 ? "var(--ok)" : "var(--oxblood)"}">${sign(gain)}%</div>
+          <p class="note">${gain < 0 ? "less error: promoted" : "more error: the champion stays"}</p>`}
+      </div></div>`;
+}
+
+function prevServed() {
+  for (let i = sel - 1; i >= 0; i--) {
+    const r = results[i];
+    if (!r || r.skipped) continue;
+    for (const d of r.docs) if (d.model_version) return d.model_version;
+    const d = r.docs[0] || {};
+    if (d.version) return d.version;
+  }
+  return null;
+}
+
+function drawReload(d) {
+  const before = prevServed();
+  return `<div class="swap">${before && before !== d.model_version ? `<div class="vchip">v${esc(before)}</div><div class="arrow">→</div>` : ""}
+      <div class="vchip now">v${esc(d.model_version)}</div></div>
+    <p class="note" style="margin-top:18px"><span class="good">✓ ${esc(d.status)}</span> · new model loaded, server never restarted ·
+      admin token read from <code>.env</code>, never on screen</p>`;
+}
+
+function drawRollback(docs) {
+  const ev = docs.find((d) => d.action) || {}, h = docs.find((d) => d.model_version);
+  return `<div class="swap"><div class="vchip">v${esc(ev.previous)}</div><div class="arrow">→</div><div class="vchip now">v${esc(ev.champion)}</div></div>
+    <div class="card kv" style="margin-top:20px">
+      <span class="k">Reason</span><span class="v">${esc(ev.reason)}</span>
+      <span class="k">Logged in</span><span class="v">reports/registry_log.jsonl</span>
+      <span class="k">Kept</span><span class="v">v${esc(ev.previous)} stays in the registry (label "previous")</span>
+      ${h ? `<span class="k">API</span><span class="v">reloaded, serving <b>v${esc(h.model_version)}</b></span>` : `<span class="k">API</span><span class="v">reloads at the next step</span>`}
+    </div>`;
+}
+
+function drawPromote(d) {
+  return `<div class="swap"><div class="vchip">v${esc(d.previous)}</div><div class="arrow">→</div><div class="vchip now">v${esc(d.champion)}</div></div>
+    <p class="note" style="margin-top:18px">The registry label moved. The API still serves the old model until it is reloaded.</p>`;
+}
+
+function drawHealth(d) {
+  return `<div class="swap"><div class="vchip now">v${esc(d.model_version)}</div>
+    <span class="badge ${d.status === "ok" ? "green" : "red"}">${esc(d.status)}</span></div>`;
+}
+
+/* ------------------------------------------------------------------ actions */
+async function runStep(i) {
+  if (running !== false || i < 0) return;
+  running = i; sel = i;
+  renderStage(); renderNext(); renderRail(); renderLoop();
+  try {
+    const r = await call(`/api/run?mode=${MODE}&i=${i}`, { method: "POST" });
+    results[i] = r; setStatus(r.status);
+  } catch (e) {
+    results[i] = { ok: false, error: e.message, docs: [], output: "" };
+  }
+  done.add(i); running = false;
+  renderStage(); renderNext(); renderRail(); renderLoop();
+}
+
+function skip(i) { results[i] = { skipped: true }; done.add(i); renderNext(); renderRail(); renderLoop(); }
+
+async function resetDemo() {
+  if (running !== false || !confirm("Put v1 back as champion and start the demo again?")) return;
+  try { const r = await call("/api/reset", { method: "POST" }); setStatus(r.status); } catch (e) { alert(e.message); }
+  results = {}; done = new Set(); sel = -1; for (const k in preds) delete preds[k];
+  await load();
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.target.closest("input, textarea")) return;
+  if (["ArrowRight", "PageDown", " ", "Enter"].includes(e.key)) { e.preventDefault(); runStep(nextIndex()); }
+  else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); if (sel > 0) select(sel - 1); }
+  else if (e.key.toLowerCase() === "s") { const n = nextIndex(); if (n >= 0 && running === false) skip(n); }
+});
+
+async function load() {
+  try {
+    const s = await call(`/api/steps?mode=${MODE}`);
+    steps = s.steps;
+    if (MODE === "api") $("#title").textContent = "the API, live";
+  } catch (e) {
+    $("#stage").innerHTML = `<h1>The demo page cannot reach its server</h1><p class="note">${esc(e.message)}</p>`;
+    return;
+  }
+  renderLoop(); renderRail(); renderNext(); renderStage(); refreshStatus();
+}
+running = false;
+load();
+setInterval(refreshStatus, 5000);
+</script>
+</body>
+</html>

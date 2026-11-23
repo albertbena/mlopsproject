@@ -21,3 +21,4 @@ mlartifacts/
 reports/monitoring/
 reports/retrain/
 reports/registry_log.jsonl
+reports/demo/

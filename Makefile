@@ -4,7 +4,7 @@ PORT    ?= 8000
 START   ?= 2020-03-16
 
 .PHONY: help setup pipeline serve test monitor retrain status rollback incident mlflow-ui clean \
-        demo demo-prep demo-check demo-reset
+        demo demo-ui demo-prep demo-check demo-reset
 
 help:  ## this list
 	@grep -E '^[a-z-]+:.*## ' Makefile | awk -F':.*## ' '{printf "  make %-11s %s\n", $$1, $$2}'
@@ -45,14 +45,17 @@ incident:  ## replay the simulated incident in its own MLflow database (reports/
 mlflow-ui:  ## browse runs and the registry on http://localhost:5000
 	.venv/bin/mlflow ui --backend-store-uri sqlite:///mlflow.db --port 5000
 
-demo-prep:  ## once, after the pipeline: add v2 (the March retrain the trigger rejected), keep v1 champion
+demo-prep:  ## once, after the pipeline: prepare the live demo (v1 champion, the March example, v2)
 	$(PY) scripts/demo.py prep --port $(PORT)
 
-demo-check:  ## before going on stage: API up, v1 serving, v2 present, admin token set
+demo-check:  ## before going on stage: API up, v1 serving, the March example ready
 	$(PY) scripts/demo.py check --port $(PORT)
 
-demo:  ## live API demo, step by step (Enter: run, s: skip, q: quit); SHORT=1 for the 1-minute version
-	$(PY) scripts/demo.py run --port $(PORT) $(if $(SHORT),--short)
+demo:  ## live demo of the whole loop (Enter: run, s: skip, q: quit); API=1 for the API alone
+	$(PY) scripts/demo.py run --port $(PORT) $(if $(SHORT),--short) $(if $(API),--api)
+
+demo-ui:  ## the same live demo as a web page with buttons (opens the browser on http://localhost:8501)
+	$(PY) scripts/demo.py ui --port $(PORT)
 
 demo-reset:  ## after a rehearsal: v1 champion again and the API reloaded
 	$(PY) scripts/demo.py reset --port $(PORT)

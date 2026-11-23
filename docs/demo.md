@@ -1,55 +1,90 @@
-# Live demo of the API (Adrien, slide 5)
+# Live demo: the whole loop, in about 2 minutes
 
-About **1 minute** (`make demo SHORT=1`, 7 steps) inside the 4:15–5:45 slot, or about **2 minutes** with the
-optional steps (`make demo`, 12 steps). Everything runs locally: no network is needed once the pipeline has run.
+One terminal, the real data, every part of the project in the order it happens in production:
 
-The demo shows what slide 5 says, live: the API answers, refuses bad input, swaps the model **without a restart**
-when the admin token is given, and goes back with `make rollback`. It ends with v1 serving, so nothing is left
-changed for the rest of the defence.
+| Step | What runs | Whose part |
+|---|---|---|
+| 1–2 | `GET /model`, then the same data hash in `dvc.lock` | Eduardo (MLflow), Jules (DVC) |
+| 3 | `POST /predict` zone 237, 20 Feb 2020, 6 pm: 911 predicted, 860 real | Adrien (API) |
+| 4 | the same question on a March hour, after COVID: v1 is far off | (the drift) |
+| 5 | the monitor on the week of 16 March: drift, action "retrain" | Abdel |
+| 6 | the retraining trigger: trains a challenger live, compares, promotes it | Rudy |
+| 7–8 | the API reloads the new champion without a restart; same March question, right again | Adrien |
+| 9 | `make rollback`: v1 is back in one command | Rudy |
 
-## The day before (15 minutes, on the laptop that will be on the projector)
+Everything runs locally: no network is needed once the pipeline has run. The demo ends with v1 serving again.
+`make demo API=1` (or `run --api`) is the older, shorter demo of the API alone.
+
+## Two ways to run it
+
+- **The web page (recommended on a projector)**: `make demo-ui` (Windows: `python scripts\demo.py ui`) opens
+  <http://localhost:8501> in the browser. One button per step (or `→`, `Space`, a presentation clicker), and each
+  result is drawn instead of printed: the model card, the hash in `dvc.lock`, a taxi meter for each prediction, the
+  monitor's verdict and the demand drop, the challenger against the champion, the version swap, the rollback. The top
+  bar shows, live, which version the registry calls champion and which one the API serves. The command of each step
+  is on screen, and "Raw output" shows exactly what it printed. Keys: `→`/`Space`/`Enter`/`PageDown` run the next
+  step, `S` skips it, `←` shows the previous one. F11 for full screen.
+- **The terminal**: `make demo` (Windows: `python scripts\demo.py run`), the same steps, Enter to run each one.
+
+The page is served by `scripts/demo.py` on 127.0.0.1 only. It can only ask for "step n" of the list above, and the
+admin token never reaches it.
+
+## The day before (on the laptop that will be on the projector)
+
+Linux or Mac:
 
 ```bash
 make setup          # .venv and a .env with an admin token
-make pipeline       # needs internet: downloads the 6 TLC files (250 MB), trains v1 (~1 min)
-make demo-prep      # adds v2 (the 2-12 March retrain the trigger rejected); v1 stays champion (~10 s)
+make pipeline       # needs internet: downloads the 6 TLC files (250 MB), trains v1
+make demo-prep      # about 30 s: v1 champion, chooses the March example (see below)
 make serve          # in a second terminal
-make demo-check     # every line must say ok; zone 237 must show 911.13 / 860 as on the cover slide
-make demo           # rehearse it, out loud, with a timer. Twice.
+make demo-check     # every line ok; zone 237 must show 911.13 / 860 as on the cover slide
+make demo-ui        # rehearse it, out loud, with a timer. Twice. (or `make demo` in the terminal)
 ```
 
-If a rehearsal stops half-way (`q`, or v2 still serving): `make demo-reset`.
+Windows: see [On Windows](#on-windows-powershell-no-make) below, same steps with other commands.
 
-## Ten minutes before the defence
+If a rehearsal stops half-way (`q`, or a new model still serving): `make demo-reset`.
 
-1. Terminal 1: `make serve` (leave it running).
-2. Terminal 2: `make demo-check`, then `make demo SHORT=1`. It clears the screen and waits on step 1: leave it there.
-3. Font size 20+ (Cmd/Ctrl and `+`), light theme on a projector, terminal full screen, notifications off.
-4. Check you can go from the deck to the terminal and back (Cmd/Alt+Tab) on the projector.
+**The March example.** `demo-prep` trains the trigger's challenger once without registering it (it is deterministic:
+same data, same settings, fixed seed, so the live retrain gives the same model) and keeps 20 March 6 pm when the
+difference with v1 is clear there, otherwise the busiest holdout hour of zone 237 where it is clearest. It is an
+illustration; the honest overall figure is the holdout MAE the trigger prints in step 6. `demo-check` shows the
+numbers in advance.
+
+**Version numbers.** Every run of the demo registers a new model (v3 the first time, then v4, v5...). Say "the new
+model", not "v3".
+
+## Ten minutes before
+
+1. Terminal 1: the server (`make serve`), left running.
+2. Terminal 2: `make demo-ui` (the browser opens on the ready check: every line ✓), F11 for full screen.
+   Or, in the terminal: `make demo-check`, then `make demo`, which waits on step 1.
+3. Notifications off. Zoom the browser (Ctrl +) if the room is large.
 
 ## On stage
 
-Enter runs the step on screen, `s` skips it, `q` stops. The caption at the top of each step says what it proves,
-so read it if your mind goes blank. Optional steps (only in the full version) are marked *opt*.
+Enter runs the step on screen, `s` skips it, `q` stops. The caption above each command says what it proves.
+Steps 5 and 6 take a few seconds ("running..." on screen): keep talking. Read the March numbers from the screen.
 
-| Step | On screen | Say |
-|---|---|---|
-| intro | slide 5 | "Thanks Eduardo. I built the service that answers. Rather than a screenshot, here it is, running on my laptop." → terminal |
-| 1 | `GET /health` → v1 | "First question: is a model loaded? Yes, version 1." |
-| 2–3 *opt* | `GET /model`, then `dvc.lock` | "Which model exactly? Its git commit and its data hash. And here is dvc.lock: the same hash. From the API we can go back to the exact data." |
-| 4 | `POST /predict` zone 237 | "A zone and an hour: zone 237, 20 February, 6 pm. We predict **911**, the real number was **860**." |
-| 5 | zone 999 → 422 | "A zone that doesn't exist: a clear error, not a crash." |
-| 6 | `promote 2` | "Now someone makes version 2 the champion in the registry. That's the retrain from early March." |
-| 7 *opt* | `/health` → still v1 | "The registry changed, the API didn't: nothing moves behind your back." |
-| 8 *opt* | reload, no token → 401 | "To switch, you need the token. Without it: refused." |
-| 9 | reload with token → v2 | "The token lives in .env: never on screen, never in Git. Version 2, and I never restarted the server." |
-| 10 | `/predict` → v2 | "Same question, new model, new answer." |
-| 11 | `make rollback` → v1 | "And if it was a mistake: one command. The label goes back and the API reloads itself." |
-| 12 *opt* | `/predict` → v1 | "911 again." |
-| close | back to slide 5, dark card | "What I just did by hand, one of our **30 tests** does at every push on GitHub: promote, reload, roll back, reload, check who answers. Speaking of rollback, Rudy will explain how we choose which model answers." |
+| Step | Say |
+|---|---|
+| intro | "Let us show you the whole system, live, on the real data. Everything runs on this laptop." |
+| 1 `/model` | "This is the model serving right now: version 1. MLflow kept the Git commit and the hash of the data that trained it." |
+| 2 `dvc.lock` | "And here is dvc.lock, written by DVC: the same hash. We can rebuild exactly the data behind this model." |
+| 3 February | "Does it work? Zone 237, 20 February, 6 pm: we predict 911, there were 860." |
+| *opt* 422 | "A wrong request gets a clear error, not a crash." (skip it with `s` if short on time) |
+| 4 March | "One month later, COVID. Same zone, same time, same model: it predicts *X*, there were *Y*. The world changed, the model did not." |
+| 5 monitor | "Our monitor checks that week. Demand fell from 33 to 5 pickups an hour, the relative error is four times normal. Verdict: retrain." |
+| 6 trigger | (while it runs) "The trigger trains a challenger on the last eleven days, keeps three days aside and tests both models on them." (result) "The challenger's error is 44% lower, so it is promoted. If it were worse, we would keep version 1: that happened the week before." |
+| 7 reload | "The API loads the new model without a restart. It needs the admin token, which lives in .env: never on screen, never in Git." |
+| 8 March again | "Same question, new model: *Z*, close to *Y* again." |
+| 9 rollback | "And if the new model turns out bad: one command, logged, version 1 is back. That's the loop: which data, does it still work, how do we go back." |
 
-Do not run `make pipeline` on stage: it downloads 250 MB. Say "the pipeline takes about 30 seconds" and point at the
-slide.
+Expected on the real data: monitor `PSI of pickups = 0.318`, `WAPE 54.1% is 4.09x the reference`, mean pickups 5.2
+vs 33.5; trigger `train 2020-03-09..19`, `holdout 2020-03-20..22`, champion MAE 1.76, challenger 0.99, `promote`.
+
+Do not run the pipeline on stage: it downloads 250 MB.
 
 ## On Windows (PowerShell, no make)
 
@@ -60,7 +95,7 @@ Windows PowerShell has no `make`, no `bash` and no `&&`: type one command per li
 git clone -b adri_lr/loving-ramanujan-7f61wo https://github.com/albertbena/mlopsproject.git
 cd mlopsproject
 py -3.13 -m venv .venv                          # or -3.12 / -3.11, whichever `py --list` shows
-$env:Path = "$PWD\.venv\Scripts;$env:Path"     # in EVERY new PowerShell window: `python` is now the project's
+$env:Path = "$PWD\.venv\Scripts;$env:Path"     # in EVERY new PowerShell window
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 python -m pip install -e .
@@ -69,24 +104,21 @@ dvc repro                                       # what make pipeline does: needs
 python scripts\demo.py prep                     # make demo-prep
 ```
 
-Then, as above, with these commands instead of the make targets:
-
 | make | PowerShell (after the `$env:Path` line, from the `mlopsproject` folder) |
 |---|---|
 | `make serve` | `uvicorn taxi.api.app:app --port 8000` |
 | `make demo-check` | `python scripts\demo.py check` |
-| `make demo SHORT=1` | `python scripts\demo.py run --short` |
+| `make demo-ui` | `python scripts\demo.py ui` |
 | `make demo` | `python scripts\demo.py run` |
 | `make demo-reset` | `python scripts\demo.py reset` |
 
-Without make, `make rollback` is shown as the two commands it runs (registry rollback, then reload), so the short
-demo has 8 steps instead of 7, and the dvc.lock step is left out (no `grep`).
+Without make, each step shows the Python command its make target runs (`python -m taxi.monitor ...`), and the
+rollback shows its two commands (registry rollback, then reload), so the demo has one step more. The hash step uses
+`findstr` instead of `grep`.
 
 ## If something goes wrong
 
-- **The API does not answer** (red line on screen): press `q`, go back to slide 5 and say "here is the same thing
-  from our rehearsal": the slide's terminal shows the same requests and answers. Do not debug in front of the room.
-- **A step fails after the promote**: carry on with the slides. Rudy's and Abdel's parts do not depend on this
-  registry (the incident has its own database). Run `make demo-reset` after the defence.
-- **Asked "how do I try it from a fresh clone?"**: `make setup`, `make pipeline`, `make serve`, then the `curl` of
-  step 4. `make demo` runs the rest.
+- **The API does not answer** (red line on screen): press `q` and go back to the slides. Do not debug in front of
+  the room.
+- **The demo stopped half-way**: carry on with the slides, and run `make demo-reset` afterwards.
+- **Asked "how do I try it from a fresh clone?"**: `make setup`, `make pipeline`, `make serve`, then `make demo`.
