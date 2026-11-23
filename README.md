@@ -36,6 +36,7 @@ make test                       # 30 unit and integration tests, no download nee
 make monitor START=2020-03-16   # drift report for one week
 make incident                   # replay the full incident (drift, retrain, broken feed, rollback)
 make mlflow-ui                  # runs, metrics, tags and the registry on http://localhost:5000
+make demo                       # live API demo: predict, swap the model without restart, roll back (docs/demo.md)
 make help                       # every command
 ```
 

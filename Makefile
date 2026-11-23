@@ -3,10 +3,11 @@ PY      := .venv/bin/python
 PORT    ?= 8000
 START   ?= 2020-03-16
 
-.PHONY: help setup pipeline serve test monitor retrain status rollback incident mlflow-ui clean
+.PHONY: help setup pipeline serve test monitor retrain status rollback incident mlflow-ui clean \
+        demo demo-prep demo-check demo-reset
 
 help:  ## this list
-	@grep -E '^[a-z-]+:.*## ' Makefile | awk -F':.*## ' '{printf "  make %-10s %s\n", $$1, $$2}'
+	@grep -E '^[a-z-]+:.*## ' Makefile | awk -F':.*## ' '{printf "  make %-11s %s\n", $$1, $$2}'
 
 setup:  ## virtualenv, pinned dependencies, and a .env with a fresh admin token
 	python3 -m venv .venv
@@ -43,6 +44,18 @@ incident:  ## replay the simulated incident in its own MLflow database (reports/
 
 mlflow-ui:  ## browse runs and the registry on http://localhost:5000
 	.venv/bin/mlflow ui --backend-store-uri sqlite:///mlflow.db --port 5000
+
+demo-prep:  ## once, after the pipeline: add v2 (the March retrain the trigger rejected), keep v1 champion
+	$(PY) scripts/demo.py prep --port $(PORT)
+
+demo-check:  ## before going on stage: API up, v1 serving, v2 present, admin token set
+	$(PY) scripts/demo.py check --port $(PORT)
+
+demo:  ## live API demo, step by step (Enter: run, s: skip, q: quit); SHORT=1 for the 1-minute version
+	$(PY) scripts/demo.py run --port $(PORT) $(if $(SHORT),--short)
+
+demo-reset:  ## after a rehearsal: v1 champion again and the API reloaded
+	$(PY) scripts/demo.py reset --port $(PORT)
 
 clean:  ## remove local MLflow state (keeps the data)
 	rm -f mlflow.db mlflow_incident.db reports/registry_log.jsonl
