@@ -1,0 +1,15 @@
+# Pinned versions, tested together with Python 3.11 to 3.13.
+mlflow==2.22.5
+SQLAlchemy==2.0.58   # mlflow 2.22 does not work with SQLAlchemy 2.1
+dvc==3.67.1
+fastapi==0.165.0
+uvicorn==0.54.0
+httpx==0.28.1
+pandas==2.3.3
+pyarrow==19.0.1
+numpy==2.3.5
+scikit-learn==1.9.1
+PyYAML==6.0.4
+python-dotenv==1.2.4
+requests==2.34.2
+pytest==9.2.0

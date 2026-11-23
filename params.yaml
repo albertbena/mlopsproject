@@ -1,0 +1,38 @@
+# Every setting of the pipeline lives here. DVC re-runs a stage when one of the params it uses changes.
+
+data:
+  # NYC TLC yellow taxi trip records, one Parquet file per month.
+  # Source: NYC Taxi & Limousine Commission, https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
+  base_url: https://d37ci6vzurychx.cloudfront.net/trip-data
+  months: ["2020-01", "2020-02", "2020-03", "2020-04", "2020-05", "2020-06"]
+  raw_dir: data/raw
+  processed: data/processed/zone_hour.parquet
+  max_zone_id: 263          # 264 and 265 are "Unknown" / "Outside of NYC" in the TLC zone list
+
+# Split by time, never at random. The reference period is what the first model is trained and validated on.
+periods:
+  train: ["2020-01-08", "2020-02-15"]   # starts on the 8th so that the 168-hour lag exists
+  valid: ["2020-02-16", "2020-02-29"]
+  drift: ["2020-03-01", "2020-06-30"]   # COVID-19: demand collapses from mid-March
+
+features:
+  lags: [1, 2, 3, 24, 168]   # hours
+  rolling_hours: 24
+
+model:
+  name: nyc-taxi-demand
+  loss: poisson              # counts, never negative
+  max_iter: 300
+  learning_rate: 0.08
+  max_leaf_nodes: 63
+  random_state: 42
+
+monitoring:
+  window_days: 7
+  psi_threshold: 0.2         # 0.1 to 0.2 is a moderate shift, above 0.2 a significant one
+  wape_ratio_threshold: 1.5  # alert when the relative error (WAPE) of the window is 1.5 times the reference one
+  min_zone_mean: 5           # a zone with at least 5 pickups an hour in the reference must not go silent
+
+retrain:
+  window_days: 14            # retrain on the last 14 days before the alert
+  holdout_days: 3            # the last 3 of them are kept to compare challenger and champion
