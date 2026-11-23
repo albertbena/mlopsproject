@@ -51,6 +51,37 @@ so read it if your mind goes blank. Optional steps (only in the full version) ar
 Do not run `make pipeline` on stage: it downloads 250 MB. Say "the pipeline takes about 30 seconds" and point at the
 slide.
 
+## On Windows (PowerShell, no make)
+
+Windows PowerShell has no `make`, no `bash` and no `&&`: type one command per line. You need Python 3.11, 3.12 or
+3.13 (`py --list`; otherwise `winget install Python.Python.3.13` and open a new PowerShell).
+
+```powershell
+git clone -b adri_lr/loving-ramanujan-7f61wo https://github.com/albertbena/mlopsproject.git
+cd mlopsproject
+py -3.13 -m venv .venv                          # or -3.12 / -3.11, whichever `py --list` shows
+$env:Path = "$PWD\.venv\Scripts;$env:Path"     # in EVERY new PowerShell window: `python` is now the project's
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m pip install -e .
+python scripts\demo.py env                      # .env with a random admin token (what make setup does)
+dvc repro                                       # what make pipeline does: needs internet, a few minutes
+python scripts\demo.py prep                     # make demo-prep
+```
+
+Then, as above, with these commands instead of the make targets:
+
+| make | PowerShell (after the `$env:Path` line, from the `mlopsproject` folder) |
+|---|---|
+| `make serve` | `uvicorn taxi.api.app:app --port 8000` |
+| `make demo-check` | `python scripts\demo.py check` |
+| `make demo SHORT=1` | `python scripts\demo.py run --short` |
+| `make demo` | `python scripts\demo.py run` |
+| `make demo-reset` | `python scripts\demo.py reset` |
+
+Without make, `make rollback` is shown as the two commands it runs (registry rollback, then reload), so the short
+demo has 8 steps instead of 7, and the dvc.lock step is left out (no `grep`).
+
 ## If something goes wrong
 
 - **The API does not answer** (red line on screen): press `q`, go back to slide 5 and say "here is the same thing
