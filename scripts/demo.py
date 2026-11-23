@@ -41,7 +41,10 @@ if WINDOWS and COLOR:
 def how(action: str) -> str:
     """The command to type for an action: the make target, or the script itself where there is no make."""
     if shutil.which("make"):
-        return {"run": "make demo", "short": "make demo SHORT=1"}.get(action, f"make demo-{action}")
+        return {"run": "make demo", "short": "make demo SHORT=1", "serve": "make serve"}.get(action, f"make demo-{action}")
+    if action == "serve":
+        return '$env:Path = "$PWD\\.venv\\Scripts;$env:Path" then uvicorn taxi.api.app:app --port 8000' if WINDOWS \
+            else ".venv/bin/uvicorn taxi.api.app:app --port 8000"
     return f"python scripts/demo.py {'run --short' if action == 'short' else action}"
 
 
@@ -255,7 +258,7 @@ def check(port: int) -> bool:
         line(code == 200, f"zone 237, 20 Feb 18:00 → predicted {pred.get('predicted_pickups')}, "
                           f"actual {pred.get('actual_pickups')} (deck: 911.13 and 860)")
     except (urllib.error.URLError, OSError):
-        line(False, f"API answers on port {port}", "start the server in another terminal (make serve)")
+        line(False, f"API answers on port {port}", f"in another terminal: {how('serve')}")
     print(c(GREEN, f"\nReady. `{how('short')}` when you are on stage.") if ok else c(RED, "\nNot ready yet: see FIX above."))
     return ok
 
@@ -313,12 +316,25 @@ def prep(port: int) -> None:
     reset(port, reason=f"demo prep: v{REFERENCE} serves during the demo")
 
 
+def use_project_python() -> None:
+    """Started with another Python (the venv line forgotten in this window)? Run again with the project's .venv."""
+    venv = ROOT / ".venv"
+    if Path(sys.prefix).resolve() == venv.resolve():
+        return
+    exe = venv / ("Scripts/python.exe" if WINDOWS else "bin/python")
+    if exe.exists():
+        sys.exit(subprocess.call([str(exe), str(Path(__file__).resolve()), *sys.argv[1:]]))
+    sys.exit("the project is not installed: no .venv folder here. Run the installation first (docs/demo.md).")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("action", choices=["run", "check", "prep", "reset", "env"])
     ap.add_argument("--port", type=int, default=int(os.environ.get("PORT") or env_file().get("PORT") or 8000))
     ap.add_argument("--short", action="store_true", help="skip the optional steps (about 1 minute)")
     a = ap.parse_args()
+    if a.action != "env":
+        use_project_python()
     if a.action == "run":
         run(a.port, a.short)
     elif a.action == "check":
