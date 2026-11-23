@@ -198,7 +198,8 @@ def check(port: int) -> bool:
         print(f"  {c(GREEN, 'ok  ') if good else c(RED, 'FIX ')} {text}" + (c(DIM, f"   → {fix}") if fix and not good else ""))
 
     print(c(BOLD, "Demo check"))
-    line(bool(admin_token()), "ADMIN_TOKEN is set in .env", "make setup")
+    line(bool(admin_token()), "ADMIN_TOKEN is set in .env",
+         "no .env: make setup. Empty token: rm .env && make setup, then restart make serve")
     champ = registry.champion()
     line(champ == REFERENCE, f"champion is v{REFERENCE} (found: v{champ})", "make demo-reset")
     versions = [str(v["version"]) for v in registry.status()["versions"]]
