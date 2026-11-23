@@ -1,0 +1,23 @@
+# Secrets: copy .env.example to .env, never commit .env
+.env
+
+# Python
+.venv/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+
+# Data: rebuilt by `dvc repro` (raw TLC files are never committed)
+/data/raw/
+/data/processed/
+
+# MLflow local state (tracking database and model artifacts)
+mlflow.db
+mlflow_incident.db
+mlruns/
+mlartifacts/
+
+# Local monitoring and retraining outputs (the incident outputs in reports/incident/ are committed)
+reports/monitoring/
+reports/retrain/
+reports/registry_log.jsonl

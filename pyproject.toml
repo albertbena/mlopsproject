@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "taxi"
+version = "1.0.0"
+description = "Hourly taxi demand per NYC zone, with MLflow tracking, DVC data, drift monitoring and rollback."
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = [
+    "ignore::DeprecationWarning:mlflow.*",
+    "ignore::pydantic.warnings.PydanticDeprecatedSince20",
+    "ignore::UserWarning:mlflow.*",
+]
