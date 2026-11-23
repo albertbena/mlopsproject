@@ -1,0 +1,22 @@
+{
+  "step": 11,
+  "name": "feed_fixed",
+  "what": "Feed fixed: compare v4 and v3 on the clean week of 2020-03-30",
+  "result": {
+    "action": "compare",
+    "bad_model": {
+      "model_version": "4",
+      "status": "ok",
+      "mae": 0.6026,
+      "wape": 0.4552,
+      "wape_ratio": 1.04
+    },
+    "last_clean_model": {
+      "model_version": "3",
+      "status": "ok",
+      "mae": 0.5798,
+      "wape": 0.4379,
+      "wape_ratio": 1.249
+    }
+  }
+}

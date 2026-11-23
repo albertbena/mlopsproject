@@ -1,0 +1,35 @@
+{
+  "step": 2,
+  "name": "control_week",
+  "what": "Monitor a normal week (sanity check)",
+  "result": {
+    "model_version": "1",
+    "run_id": "8c14b2b0f12445f58c65b224575f260d",
+    "status": "ok",
+    "action": "none",
+    "reasons": [],
+    "window": {
+      "start": "2020-02-23 00:00:00",
+      "end": "2020-02-29 23:00:00",
+      "hours": 168,
+      "rows": 44184
+    },
+    "mean_pickups": 35.348,
+    "reference_mean_pickups": 33.481,
+    "psi": {
+      "pickups": 0.0004,
+      "lag_1": 0.0004
+    },
+    "mae": 4.5516,
+    "reference_mae": 4.431,
+    "wape": 0.1288,
+    "reference_wape": 0.1323,
+    "wape_ratio": 0.973,
+    "silent_zones": [],
+    "thresholds": {
+      "psi_threshold": 0.2,
+      "wape_ratio_threshold": 1.5,
+      "min_zone_mean": 5
+    }
+  }
+}

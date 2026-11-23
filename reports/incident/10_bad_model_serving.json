@@ -1,0 +1,10 @@
+{
+  "step": 10,
+  "name": "bad_model_serving",
+  "what": "The model trained on the broken feed is now the champion",
+  "result": {
+    "action": "serving",
+    "champion": "4",
+    "previous": "3"
+  }
+}

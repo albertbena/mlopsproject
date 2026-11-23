@@ -1,0 +1,46 @@
+{
+  "step": 7,
+  "name": "fault_injected",
+  "what": "Zones [140, 238, 236] go silent from 2020-03-23 to 2020-03-29 (injected)",
+  "result": {
+    "model_version": "3",
+    "run_id": "b9f488fcee954ca6988bdbf6b34e9866",
+    "status": "data_quality",
+    "action": "hold",
+    "reasons": [
+      "3 busy zone(s) with no pickup at all: [140, 236, 238]"
+    ],
+    "window": {
+      "start": "2020-03-23 00:00:00",
+      "end": "2020-03-29 23:00:00",
+      "hours": 168,
+      "rows": 44184
+    },
+    "mean_pickups": 1.415,
+    "reference_mean_pickups": 2.834,
+    "psi": {
+      "pickups": 0.0229,
+      "lag_1": 0.0237
+    },
+    "mae": 0.6212,
+    "reference_mae": 0.9935,
+    "wape": 0.439,
+    "reference_wape": 0.3506,
+    "wape_ratio": 1.252,
+    "silent_zones": [
+      140,
+      236,
+      238
+    ],
+    "thresholds": {
+      "psi_threshold": 0.2,
+      "wape_ratio_threshold": 1.5,
+      "min_zone_mean": 5
+    },
+    "injected_silent_zones": [
+      140,
+      238,
+      236
+    ]
+  }
+}

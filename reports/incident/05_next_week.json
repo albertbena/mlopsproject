@@ -1,0 +1,39 @@
+{
+  "step": 5,
+  "name": "next_week",
+  "what": "Monitor the next week with the current champion",
+  "result": {
+    "model_version": "1",
+    "run_id": "8c14b2b0f12445f58c65b224575f260d",
+    "status": "drift",
+    "action": "retrain",
+    "reasons": [
+      "PSI of pickups = 0.318 > 0.2",
+      "PSI of lag_1 = 0.317 > 0.2",
+      "WAPE 54.1% is 4.09x the reference WAPE 13.2%"
+    ],
+    "window": {
+      "start": "2020-03-16 00:00:00",
+      "end": "2020-03-22 23:00:00",
+      "hours": 168,
+      "rows": 44184
+    },
+    "mean_pickups": 5.169,
+    "reference_mean_pickups": 33.481,
+    "psi": {
+      "pickups": 0.3182,
+      "lag_1": 0.3166
+    },
+    "mae": 2.7963,
+    "reference_mae": 4.431,
+    "wape": 0.541,
+    "reference_wape": 0.1323,
+    "wape_ratio": 4.088,
+    "silent_zones": [],
+    "thresholds": {
+      "psi_threshold": 0.2,
+      "wape_ratio_threshold": 1.5,
+      "min_zone_mean": 5
+    }
+  }
+}

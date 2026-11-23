@@ -1,0 +1,32 @@
+{
+  "step": 6,
+  "name": "retrain_again",
+  "what": "Retraining trigger on that report",
+  "result": {
+    "decision": "promote",
+    "trigger": "retrain",
+    "reasons": [
+      "PSI of pickups = 0.318 > 0.2",
+      "PSI of lag_1 = 0.317 > 0.2",
+      "WAPE 54.1% is 4.09x the reference WAPE 13.2%"
+    ],
+    "train": [
+      "2020-03-09",
+      "2020-03-19"
+    ],
+    "holdout": [
+      "2020-03-20",
+      "2020-03-22"
+    ],
+    "champion": {
+      "version": "1",
+      "holdout_mae": 1.763
+    },
+    "challenger": {
+      "version": "3",
+      "run_id": "b9f488fcee954ca6988bdbf6b34e9866",
+      "holdout_mae": 0.9935
+    },
+    "serving": "3"
+  }
+}

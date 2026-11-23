@@ -1,0 +1,35 @@
+{
+  "step": 13,
+  "name": "after_rollback",
+  "what": "Monitor 2020-03-30 with the champion after the rollback",
+  "result": {
+    "model_version": "3",
+    "run_id": "b9f488fcee954ca6988bdbf6b34e9866",
+    "status": "ok",
+    "action": "none",
+    "reasons": [],
+    "window": {
+      "start": "2020-03-30 00:00:00",
+      "end": "2020-04-05 23:00:00",
+      "hours": 168,
+      "rows": 44184
+    },
+    "mean_pickups": 1.324,
+    "reference_mean_pickups": 2.834,
+    "psi": {
+      "pickups": 0.0272,
+      "lag_1": 0.0283
+    },
+    "mae": 0.5798,
+    "reference_mae": 0.9935,
+    "wape": 0.4379,
+    "reference_wape": 0.3506,
+    "wape_ratio": 1.249,
+    "silent_zones": [],
+    "thresholds": {
+      "psi_threshold": 0.2,
+      "wape_ratio_threshold": 1.5,
+      "min_zone_mean": 5
+    }
+  }
+}

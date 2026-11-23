@@ -1,0 +1,49 @@
+{
+  "seconds": 31.6,
+  "silent_zones": [
+    140,
+    238,
+    236
+  ],
+  "bad_version": "4",
+  "restored_version": "3",
+  "final": {
+    "model": "nyc-taxi-demand",
+    "champion": "3",
+    "previous": "4",
+    "versions": [
+      {
+        "version": 1,
+        "run_id": "8c14b2b0f12445f58c65b224575f260d",
+        "trigger": "reference",
+        "train_period": "2020-01-08..2020-02-15",
+        "valid_mae": "4.431",
+        "data_md5": "e7be7f351cd3041ab5c2844fcdf25abb"
+      },
+      {
+        "version": 2,
+        "run_id": "0f2130d02863491b9732d7541245dd95",
+        "trigger": "drift",
+        "train_period": "2020-03-02..2020-03-12",
+        "valid_mae": "6.549",
+        "data_md5": "43cb3b9257ed6d521c87f44e936b2922"
+      },
+      {
+        "version": 3,
+        "run_id": "b9f488fcee954ca6988bdbf6b34e9866",
+        "trigger": "drift",
+        "train_period": "2020-03-09..2020-03-19",
+        "valid_mae": "0.994",
+        "data_md5": "43cb3b9257ed6d521c87f44e936b2922"
+      },
+      {
+        "version": 4,
+        "run_id": "0af9a023879b46abb1d4f0f005a38e90",
+        "trigger": "forced",
+        "train_period": "2020-03-16..2020-03-26",
+        "valid_mae": "0.495",
+        "data_md5": "fd6302079726b7eb1a7fb36c29d6d064"
+      }
+    ]
+  }
+}
